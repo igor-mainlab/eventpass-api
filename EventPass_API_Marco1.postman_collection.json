@@ -1,0 +1,235 @@
+{
+  "info": {
+    "_postman_id": "dd23e908-edb1-4697-b432-c4902bbaa96f",
+    "name": "EventPass API - Marco 1",
+    "description": "Coleção de testes da EventPass API, desenvolvida para o Domínio 5 — Gestão de Eventos, na disciplina de Computação em Nuvem e Arquitetura Orientada a Serviços (SOA) do IFPA — Campus Ananindeua. Contém requisições para validar os quatro endpoints RESTful obrigatórios do Marco 1.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "60321814",
+    "_collection_link": "https://go.postman.co/collection/60321814-dd23e908-edb1-4697-b432-c4902bbaa96f?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "01 - Listar Eventos",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "\r\npm.test(\"HTTP 200 - Listagem realizada com sucesso\", function () {\r\n    pm.response.to.have.status(200);\r\n});\r\n\r\npm.test(\"Resposta no formato JSON\", function () {\r\n    pm.response.to.be.json;\r\n});\r\n\r\npm.test(\"Resposta contém uma lista de eventos\", function () {\r\n    const eventos = pm.response.json();\r\n\r\n    pm.expect(eventos).to.be.an(\"array\");\r\n});\r\n\r\npm.test(\"Eventos possuem os campos obrigatórios\", function () {\r\n    const eventos = pm.response.json();\r\n\r\n    pm.expect(eventos.length).to.be.above(0);\r\n\r\n    eventos.forEach(function (evento) {\r\n        pm.expect(evento).to.have.property(\"id_evento\");\r\n        pm.expect(evento).to.have.property(\"nome\");\r\n        pm.expect(evento).to.have.property(\"data\");\r\n        pm.expect(evento).to.have.property(\"local\");\r\n        pm.expect(evento).to.have.property(\"vagas_disponiveis\");\r\n        pm.expect(evento).to.have.property(\"preco_ingresso\");\r\n\r\n        pm.expect(evento.vagas_disponiveis).to.be.at.least(0);\r\n    });\r\n});\r\n"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/eventos",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "eventos"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "02 - Emitir Ingresso",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "\r\npm.test(\"HTTP 201 - Ingresso criado com sucesso\", function () {\r\n    pm.response.to.have.status(201);\r\n});\r\n\r\npm.test(\"Ingresso possui os campos obrigatórios\", function () {\r\n    const ingresso = pm.response.json();\r\n\r\n    pm.expect(ingresso).to.have.property(\"id_ingresso\");\r\n    pm.expect(ingresso).to.have.property(\"evento_nome\");\r\n    pm.expect(ingresso).to.have.property(\"comprador_nome\");\r\n    pm.expect(ingresso).to.have.property(\"qrcode_hash\");\r\n    pm.expect(ingresso).to.have.property(\"status\");\r\n    pm.expect(ingresso).to.have.property(\"data_emissao\");\r\n});\r\n\r\npm.test(\"Ingresso está com status EMITIDO\", function () {\r\n    const ingresso = pm.response.json();\r\n\r\n    pm.expect(ingresso.status).to.eql(\"EMITIDO\");\r\n});\r\n\r\npm.test(\"Hash SHA-256 possui 64 caracteres hexadecimais\", function () {\r\n    const ingresso = pm.response.json();\r\n\r\n    pm.expect(ingresso.qrcode_hash).to.match(/^[a-fA-F0-9]{64}$/);\r\n});\r\n\r\n// Armazena os identificadores somente quando a emissão é bem-sucedida.\r\nif (pm.response.code === 201) {\r\n    const ingresso = pm.response.json();\r\n\r\n    pm.collectionVariables.set(\"id_ingresso\", ingresso.id_ingresso);\r\n    pm.collectionVariables.set(\"qrcode_hash\", ingresso.qrcode_hash);\r\n}\r\n"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "\r\n{\r\n  \"evento_id\": \"EVT-20\",\r\n  \"comprador_nome\": \"João Almeida\",\r\n  \"comprador_cpf\": \"12345678909\",\r\n  \"comprador_email\": \"joao@example.com\"\r\n}\r\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/ingressos",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "ingressos"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "03 - Realizar Check-in",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "\r\npm.test(\"HTTP 200 - Check-in realizado com sucesso\", function () {\r\n    pm.response.to.have.status(200);\r\n});\r\n\r\npm.test(\"Acesso ao evento foi liberado\", function () {\r\n    const resposta = pm.response.json();\r\n\r\n    pm.expect(resposta.status_acesso).to.eql(\"LIBERADO\");\r\n});\r\n\r\npm.test(\"Resposta possui os campos obrigatórios\", function () {\r\n    const resposta = pm.response.json();\r\n\r\n    pm.expect(resposta).to.have.property(\"status_acesso\");\r\n    pm.expect(resposta).to.have.property(\"comprador_nome\");\r\n    pm.expect(resposta).to.have.property(\"evento_nome\");\r\n    pm.expect(resposta).to.have.property(\"data_hora_checkin\");\r\n});\r\n\r\npm.test(\"Horário de check-in é válido\", function () {\r\n    const resposta = pm.response.json();\r\n\r\n    pm.expect(\r\n        Number.isNaN(Date.parse(resposta.data_hora_checkin))\r\n    ).to.eql(false);\r\n});\r\n"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "\r\n{\r\n  \"qrcode_hash\": \"{{qrcode_hash}}\",\r\n  \"portaria_id\": \"PORTAL-01\"\r\n}\r\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/checkin",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "checkin"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "04 - Check-in Duplicado",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "\r\npm.test(\"HTTP 409 - Check-in duplicado bloqueado\", function () {\r\n    pm.response.to.have.status(409);\r\n});\r\n\r\npm.test(\"Código de erro INGRESSO_JA_UTILIZADO\", function () {\r\n    const erro = pm.response.json();\r\n\r\n    pm.expect(erro.codigo_erro).to.eql(\"INGRESSO_JA_UTILIZADO\");\r\n});\r\n\r\npm.test(\"Erro possui mensagem e timestamp\", function () {\r\n    const erro = pm.response.json();\r\n\r\n    pm.expect(erro).to.have.property(\"mensagem\");\r\n    pm.expect(erro).to.have.property(\"timestamp\");\r\n});\r\n"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "\r\n{\r\n  \"qrcode_hash\": \"{{qrcode_hash}}\",\r\n  \"portaria_id\": \"PORTAL-01\"\r\n}\r\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/checkin",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "checkin"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "05 - Consultar Ingresso",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "\r\npm.test(\"HTTP 200 - Ingresso consultado com sucesso\", function () {\r\n    pm.response.to.have.status(200);\r\n});\r\n\r\npm.test(\"Ingresso possui os campos obrigatórios\", function () {\r\n    const ingresso = pm.response.json();\r\n\r\n    pm.expect(ingresso).to.have.property(\"id_ingresso\");\r\n    pm.expect(ingresso).to.have.property(\"evento_nome\");\r\n    pm.expect(ingresso).to.have.property(\"comprador_nome\");\r\n    pm.expect(ingresso).to.have.property(\"qrcode_hash\");\r\n    pm.expect(ingresso).to.have.property(\"status\");\r\n    pm.expect(ingresso).to.have.property(\"data_emissao\");\r\n});\r\n\r\npm.test(\"Identificador corresponde ao ingresso emitido\", function () {\r\n    const ingresso = pm.response.json();\r\n\r\n    pm.expect(ingresso.id_ingresso).to.eql(\r\n        pm.collectionVariables.get(\"id_ingresso\")\r\n    );\r\n});\r\n\r\npm.test(\"Ingresso apresenta status UTILIZADO\", function () {\r\n    const ingresso = pm.response.json();\r\n\r\n    pm.expect(ingresso.status).to.eql(\"UTILIZADO\");\r\n});\r\n"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/ingressos/{{id_ingresso}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "ingressos",
+            "{{id_ingresso}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "06 - Consultar Ingresso Inexistente",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "\r\npm.test(\"HTTP 404 - Ingresso não encontrado\", function () {\r\n    pm.response.to.have.status(404);\r\n});\r\n\r\npm.test(\"Código de erro INGRESSO_NAO_ENCONTRADO\", function () {\r\n    const erro = pm.response.json();\r\n\r\n    pm.expect(erro.codigo_erro).to.eql(\"INGRESSO_NAO_ENCONTRADO\");\r\n});\r\n\r\npm.test(\"Erro possui mensagem e timestamp\", function () {\r\n    const erro = pm.response.json();\r\n\r\n    pm.expect(erro).to.have.property(\"mensagem\");\r\n    pm.expect(erro).to.have.property(\"timestamp\");\r\n});\r\n"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/ingressos/ING-INEXISTENTE",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "ingressos",
+            "ING-INEXISTENTE"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000"
+    },
+    {
+      "key": "id_ingresso",
+      "value": ""
+    },
+    {
+      "key": "qrcode_hash",
+      "value": ""
+    }
+  ]
+}
